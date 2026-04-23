@@ -9,7 +9,7 @@ const Navigation = () => {
 
   const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/translator", label: "Translator" },
+    { href: "#translator", label: "Translator" },
     { href: "/tutorial", label: "Learn Brahmi" },
     { href: "#about", label: "About" },
     { href: "#faq", label: "FAQ" },

@@ -4,6 +4,10 @@ import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-manuscript.jpg";
 
 const HeroSection = () => {
+  const scrollToTranslator = () => {
+    document.getElementById('translator')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -36,12 +40,13 @@ const HeroSection = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Link to="/translator">
-              <Button className="btn-hero group">
-                <Upload className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
-                Upload Image to Translate
-              </Button>
-            </Link>
+            <Button 
+              onClick={scrollToTranslator}
+              className="btn-hero group"
+            >
+              <Upload className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+              Upload Image to Translate
+            </Button>
             
             <Link to="/tutorial">
               <Button 

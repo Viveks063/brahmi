@@ -18,27 +18,12 @@ interface OCRResult {
   success: boolean;
   filename: string;
   results: {
-    image_type: string;
-    recognized_raw: string;
-    brahmi_unicode: string;
-    char_breakdown: Array<{
-      brahmi: string;
-      iast: string;
-      simple: string;
-      visual_shape: string;
-    }>;
-    iast: string;
-    simple_roman: string;
-    translation: string;
-    translation_extended: string;
-    script_variant: string;
-    language: string;
-    period: string;
-    confidence: string;
-    confidence_reason: string;
-    damaged: string;
-    paleographic_notes: string;
-    alternative_readings: string;
+    recognized: string;
+    brahmi_characters: string;
+    brahmi_confidence: string;
+    brahmi_explanation: string;
+    transliterated: string;
+    translated: string;
   };
 }
 
@@ -55,6 +40,19 @@ const BrahmiAPIService = {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       throw new Error(errorData.detail || "Failed to process image");
+    }
+
+    return (await response.json()) as OCRResult;
+  },
+
+  async testSampleImage(): Promise<OCRResult> {
+    const response = await fetch("http://localhost:8000/test-sample", {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.detail || "Failed to process sample image");
     }
 
     return (await response.json()) as OCRResult;
@@ -299,7 +297,7 @@ const OcrUploader: React.FC = () => {
       console.error("processImage error:", err);
       toast({
         title: "Processing failed",
-        description: "Please try again.",
+        description: err instanceof Error ? err.message : "Unknown error",
         variant: "destructive",
       });
     } finally {
@@ -308,10 +306,26 @@ const OcrUploader: React.FC = () => {
   };
 
   const testSample = async () => {
-    toast({
-      title: "Sample not available",
-      description: "Please upload an image instead.",
-    });
+    setProcessing(true);
+    try {
+      const res = await BrahmiAPIService.testSampleImage();
+      setResult(res);
+      setPreview(null);
+      setFile(null);
+      toast({
+        title: "Sample processed",
+        description: "Loaded sample result.",
+      });
+    } catch (err) {
+      console.error("testSample error:", err);
+      toast({
+        title: "Sample failed",
+        description: err instanceof Error ? err.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const removeSelectedFile = () => {
@@ -486,25 +500,30 @@ const OcrUploader: React.FC = () => {
                 <div className="space-y-6">
                   <div>
                     <h4 className="font-modern font-semibold text-foreground mb-2 flex items-center">
-                      <span className="text-xl mr-2">�</span>
+                      <span className="text-xl mr-2">📷</span>
+                      Recognized Text:
+                    </h4>
+                    <p className="font-manuscript text-lg bg-card p-3 rounded border">{result.results.recognized}</p>
+                  </div>
+
+                  <div>
+                    <h4 className="font-modern font-semibold text-foreground mb-2 flex items-center">
+                      <span className="text-xl mr-2">🔤</span>
                       Brahmi Characters:
                     </h4>
-                    <p className="font-manuscript text-2xl bg-card p-4 rounded border text-center" style={{lineHeight: '1.8'}}>
-                      {result.results.brahmi_unicode}
-                    </p>
+                    <p className="font-manuscript text-lg bg-card p-3 rounded border">{result.results.brahmi_characters}</p>
+                    <div className="mt-2 space-y-1 text-sm">
+                      <p><span className="font-semibold text-muted-foreground">Confidence:</span> {result.results.brahmi_confidence}</p>
+                      <p><span className="font-semibold text-muted-foreground">Explanation:</span> {result.results.brahmi_explanation}</p>
+                    </div>
                   </div>
 
                   <div>
                     <h4 className="font-modern font-semibold text-foreground mb-2 flex items-center">
                       <span className="text-xl mr-2">🔄</span>
-                      Transliteration (IAST):
+                      Transliterated (IAST):
                     </h4>
-                    <p className="font-modern text-lg bg-card p-3 rounded border italic">{result.results.iast}</p>
-                    {result.results.simple_roman && (
-                      <p className="font-modern text-sm text-muted-foreground mt-2">
-                        <span className="font-semibold">Simple Roman:</span> {result.results.simple_roman}
-                      </p>
-                    )}
+                    <p className="font-modern bg-card p-3 rounded border">{result.results.transliterated}</p>
                   </div>
 
                   <div>
@@ -512,52 +531,7 @@ const OcrUploader: React.FC = () => {
                       <span className="text-xl mr-2">🌍</span>
                       English Translation:
                     </h4>
-                    <p className="font-modern text-lg bg-card p-3 rounded border">{result.results.translation}</p>
-                    {result.results.translation_extended && (
-                      <p className="font-modern text-sm text-muted-foreground mt-3 p-3 bg-muted rounded">
-                        {result.results.translation_extended}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="border-t pt-4">
-                    <h4 className="font-modern font-semibold text-foreground mb-3">Script Analysis</h4>
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <div>
-                        <p className="font-semibold text-muted-foreground">Image Type:</p>
-                        <p className="text-foreground">{result.results.image_type}</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-muted-foreground">Confidence:</p>
-                        <p className="text-foreground">{result.results.confidence}</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-muted-foreground">Language:</p>
-                        <p className="text-foreground">{result.results.language}</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-muted-foreground">Period:</p>
-                        <p className="text-foreground">{result.results.period}</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-muted-foreground">Script Variant:</p>
-                        <p className="text-foreground text-xs">{result.results.script_variant}</p>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-muted-foreground">Damaged:</p>
-                        <p className="text-foreground">{result.results.damaged}</p>
-                      </div>
-                    </div>
-                    {result.results.confidence_reason && (
-                      <p className="text-xs text-muted-foreground mt-3 p-2 bg-muted rounded">
-                        <span className="font-semibold">Confidence Reason:</span> {result.results.confidence_reason}
-                      </p>
-                    )}
-                    {result.results.paleographic_notes && (
-                      <p className="text-xs text-muted-foreground mt-3 p-2 bg-muted rounded">
-                        <span className="font-semibold">Notes:</span> {result.results.paleographic_notes}
-                      </p>
-                    )}
+                    <p className="font-modern bg-card p-3 rounded border">{result.results.translated}</p>
                   </div>
                 </div>
               ) : (
