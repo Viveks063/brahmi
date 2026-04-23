@@ -1,0 +1,17 @@
+# Environment variables - NEVER commit API keys
+.env
+.env.local
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.venv/
+
+# Vercel
+.vercel
