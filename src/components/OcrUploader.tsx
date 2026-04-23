@@ -299,7 +299,7 @@ const OcrUploader: React.FC = () => {
       console.error("processImage error:", err);
       toast({
         title: "Processing failed",
-        description: err instanceof Error ? err.message : "Unknown error",
+        description: "Please try again.",
         variant: "destructive",
       });
     } finally {
