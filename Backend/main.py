@@ -135,15 +135,12 @@ def call_gemini_with_retry(prompt, image_data=None, image_type=None, max_retries
         except Exception as e:
             error_str = str(e)
             print(f"❌ Attempt {attempt + 1} failed: {error_str}")
-            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                if attempt < max_retries - 1:
-                    wait_time = (attempt + 1) * 5
-                    print(f"⏳ Rate limited. Waiting {wait_time}s...")
-                    time.sleep(wait_time)
-                else:
-                    raise HTTPException(status_code=429, detail=" Try again in a few minutes.")
+            if attempt < max_retries - 1:
+                wait_time = (attempt + 1) * 2
+                print(f"⏳ Retrying in {wait_time}s...")
+                time.sleep(wait_time)
             else:
-                raise HTTPException(status_code=500, detail=f"Gemini API Error: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Processing failed: {str(e)}")
 
 
 def recognize_text(image_bytes, image_type):
